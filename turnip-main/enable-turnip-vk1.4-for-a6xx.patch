@@ -1,5 +1,5 @@
 --- a/src/freedreno/vulkan/tu_device.cc
-+++ b/src/freedreno/vulkan/tu_device.cc	2024-12-27 21:05:21.255999098 +0800
++++ b/src/freedreno/vulkan/tu_device.cc
 @@ -467,8 +467,8 @@
     features->pushDescriptor = true;
  
