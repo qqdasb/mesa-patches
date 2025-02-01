@@ -211,25 +211,16 @@ index e1f5161..81e4431 100644
     /* Allocate the image from the driver
      */
     buffer = calloc(1, sizeof *buffer);
-@@ -1588,7 +1547,7 @@ dri3_alloc_render_buffer(struct loader_dri3_drawable *draw, unsigned int fourcc,
-                                    buffer->strides[2], buffer->offsets[2],
-                                    buffer->strides[3], buffer->offsets[3],
-                                    depth, buffer->cpp * 8,
--                                   buffer->modifier,
-+                                   buffer->modifier ? buffer->modifier : 1274,
-                                    buffer_fds);
+@@ -1612,7 +1612,7 @@
+                                                         buffer->strides[2], buffer->offsets[2],
+                                                         buffer->strides[3], buffer->offsets[3],
+                                                         depth, buffer->cpp * 8,
+-                                                        buffer->modifier,
++                                                        buffer->modifier ? buffer->modifier : 1274,
+                                                         buffer_fds);
     } else
  #endif
-@@ -1602,16 +1561,8 @@ dri3_alloc_render_buffer(struct loader_dri3_drawable *draw, unsigned int fourcc,
-                                   buffer_fds[0]);
-    }
- 
--   xcb_dri3_fence_from_fd(draw->conn,
--                          pixmap,
--                          (sync_fence = xcb_generate_id(draw->conn)),
--                          false,
--                          fence_fd);
--
+@@ -1602,7 +1561,5 @@ dri3_alloc_render_buffer(struct loader_dri3_drawable *draw, unsigned int fourcc,
     buffer->pixmap = pixmap;
     buffer->own_pixmap = true;
 -   buffer->sync_fence = sync_fence;
@@ -247,10 +238,10 @@ index e1f5161..81e4431 100644
     return NULL;
  }
  
-@@ -1904,11 +1852,8 @@ dri3_get_pixmap_buffer(struct dri_drawable *driDrawable, unsigned int fourcc,
-    int                                  buf_id = loader_dri3_pixmap_buf_id(buffer_type);
+@@ -1933,11 +1933,8 @@
     struct loader_dri3_buffer            *buffer = draw->buffers[buf_id];
     xcb_drawable_t                       pixmap;
+    xcb_void_cookie_t                    cookie;
 -   xcb_sync_fence_t                     sync_fence;
 -   struct xshmfence                     *shm_fence;
     int                                  width;
@@ -275,15 +266,18 @@ index e1f5161..81e4431 100644
     /* Get the currently-bound screen or revert to using the drawable's screen if
      * no contexts are currently bound. The latter case is at least necessary for
      * obs-studio, when using Window Capture (Xcomposite) as a Source.
-@@ -1938,11 +1874,6 @@ dri3_get_pixmap_buffer(struct dri_drawable *driDrawable, unsigned int fourcc,
+@@ -1938,14 +1874,9 @@ dri3_get_pixmap_buffer(struct dri_drawable *driDrawable, unsigned int fourcc,
         cur_screen = draw->dri_screen_render_gpu;
     }
  
--   xcb_dri3_fence_from_fd(draw->conn,
--                          pixmap,
--                          (sync_fence = xcb_generate_id(draw->conn)),
--                          false,
--                          fence_fd);
+-   cookie = xcb_dri3_fence_from_fd_checked(draw->conn,
+-                                           pixmap,
+-                                           (sync_fence = xcb_generate_id(draw->conn)),
+-                                           false,
+-                                           fence_fd);
+    if (!check_xcb_error(cookie, "xcb_dri3_fence_from_fd"))
+       goto no_image;
+ 
     buffer->image = loader_dri3_get_pixmap_buffer(draw->conn, pixmap, cur_screen, fourcc,
                                                   draw->multiplanes_available, &width, &height, buffer);
  
